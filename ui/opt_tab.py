@@ -9,7 +9,6 @@ class OptimizerTab(ttk.Frame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         style = ttk.Style()
-        style.configure("Optimizer.TFrame", background="#90ee90")  # Light green - Matches Optimizer in TermsTab
 
         self.configure(style="Optimizer.TFrame")
         
@@ -25,8 +24,8 @@ class OptimizerTab(ttk.Frame):
         self.opt_n_trials_var = tk.StringVar(value="10")
         self.opt_bet_div_var = tk.StringVar(value="256,500")
         self.opt_profit_mult_var = tk.StringVar(value="50,100")
-        self.opt_w_var = tk.StringVar(value="50,100")
-        self.opt_l_var = tk.StringVar(value="3-5")
+        self.opt_w_var = tk.StringVar(value="50-100;step=5")
+        self.opt_l_var = tk.StringVar(value="3-5;step=1")
         self.opt_buffer_var = tk.StringVar(value="25,30,40")
         
         self._build_param_frame()
@@ -44,7 +43,18 @@ class OptimizerTab(ttk.Frame):
         self.clear_button.grid(row=4, column=0, pady=10, sticky="w", padx=10)
 
     def _build_param_frame(self):
-        frame = ttk.LabelFrame(self, text="Parameter Ranges", padding=10)
+        frame = tk.LabelFrame(self, text="Parameter Ranges")
+        frame.configure(relief='sunken')
+        frame.configure(font="-family {Times New Roman} -size 12 -weight bold -slant italic -underline 1")
+        frame.configure(foreground="#249f87")
+        frame.configure(relief="sunken")
+        frame.configure(background="#3f3f3f")
+        frame.configure(highlightbackground="#249f87")
+        frame.configure(highlightcolor="#a9ebde")
+        frame.configure(highlightthickness="2")
+        frame.configure(padx="10")
+        frame.configure(pady="10")
+        frame.configure(takefocus="2")
         frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")  # MODIFIED: sticky="ew"
         frame.columnconfigure(1, weight=1)
         
