@@ -1,6 +1,4 @@
 # Dice_Tool/ui/widgets.py
-# Corrected TIP_BACKGROUND to a valid hex color "#EEEECD" (removed invalid extra digits assuming typo)
-
 import tkinter as tk
 from typing import Optional
 
@@ -42,3 +40,4 @@ class ToolTip:
         self.tip_window = None
         if tw:
             tw.destroy()
+
