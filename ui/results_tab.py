@@ -10,7 +10,6 @@ class ResultsTab(ttk.Frame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         style = ttk.Style()
-        style.configure("Results.TFrame", background="#ffe0ea")
 
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=0)  # For scrollbars
@@ -21,6 +20,7 @@ class ResultsTab(ttk.Frame):
         # MODIFIED FOR PRECISE MEASUREMENT: Set minwidth on columns
         self.cols = ("BetDiv", "ProfitMult", "W%", "L", "Buffer%", "AvgHigh", "StdDev", "MaxHigh", "AvgCycles", "AvgRounds", "CycleSuccess%", "Bust%", "Score")
         self.res_tree = ttk.Treeview(self, columns=self.cols, show="headings", height=20)
+        style.configure('Treeview', rowheight=18)   # add this line somewhere after theme is applied
         for col in self.cols:
             self.res_tree.heading(col, text=col, command=lambda c=col: self.sort_res_column(c, False))
             self.res_tree.column(col, anchor="center", minwidth=80, width=100)  # MODIFIED: minwidth for precision
@@ -28,6 +28,11 @@ class ResultsTab(ttk.Frame):
         v_scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.res_tree.yview)
         v_scrollbar.grid(row=1, column=2, sticky="ns")  # Changed from row=0
         self.res_tree.configure(yscrollcommand=v_scrollbar.set)
+
+        h_scrollbar = ttk.Scrollbar(self, orient="horizontal", command=self.res_tree.xview)
+        h_scrollbar.grid(row=2, column=0, columnspan=2, sticky="ew")
+        self.res_tree.configure(xscrollcommand=h_scrollbar.set)
+
 
         h_scrollbar = ttk.Scrollbar(self, orient="horizontal", command=self.res_tree.xview)
         h_scrollbar.grid(row=2, column=0, columnspan=2, sticky="ew")
