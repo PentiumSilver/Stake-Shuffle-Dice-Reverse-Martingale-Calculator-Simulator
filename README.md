@@ -5,7 +5,7 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
 
 1.) Install the Tampermonkey browser extension. If you don't already have Tampermonkey installed as a browser extension, you can pick it up here: https://www.tampermonkey.net/
 
-2.) Create a new Tampermonkey.
+2.) Create a new Tampermonkey script.
 
 3.) Delete the pre generated code from the newly created script.
 
