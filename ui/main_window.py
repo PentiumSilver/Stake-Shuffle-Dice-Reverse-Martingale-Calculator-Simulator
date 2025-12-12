@@ -12,79 +12,62 @@ from .calc_tab import CalculatorTab
 from .opt_tab import OptimizerTab
 from .results_tab import ResultsTab
 from .terms_tab import TermsTab
+from .settings_tab import SettingsTab
 
-# Dice_Tool/ui/main_window.py
-# (Only the apply_global_theme function needs to be updated/replaced)
+THEMES = {
+    "Original": {
+        "bg": "#3f3f3f",
+        "fg": "#17c7b8",
+        "label_fg": "#249f87",
+        "field_bg": "#2d2d2d",
+        "select_bg": "#17c7b8",
+        "select_fg": "#000000",
+        "button_bg": "#333333",
+        "button_active": "#555555",
+        "heading_bg": "#333333",
+        "trough": "#555555",
+        "progress_bg": "#00ff80",
+        "root_bg": "#17c7b8",
+        "text_bg": "#2e2e2e",
+        "text_fg": "#ffffff",
+        "text_select_bg": "#249f87",
+    },
+    "Stake": {
+        "bg": "#162a35",
+        "fg": "#c9d1d9",
+        "label_fg": "#c9d1d9",
+        "field_bg": "#071824",
+        "select_bg": "#1f333e",
+        "select_fg": "#c9d1d9",
+        "button_bg": "#071824",
+        "button_active": "#1a2c38",
+        "heading_bg": "#071824",
+        "trough": "#071824",
+        "progress_bg": "#00ff80",
+        "root_bg": "#162a35",
+        "text_bg": "#0f212e",
+        "text_fg": "#071824",
+        "text_select_bg": "#1a2c38",
+    },
+    "Shuffle": {
+        "bg": "#131313",
+        "fg": "#ffffff",
+        "label_fg": "#a855f7",
+        "field_bg": "#363636",
+        "select_bg": "#a855f7",
+        "select_fg": "#131313",
+        "button_bg": "#363636",
+        "button_active": "#a855f7",
+        "heading_bg": "#363636",
+        "trough": "#222222",
+        "progress_bg": "#a855f7",
+        "root_bg": "#131313",
+        "text_bg": "#363636",
+        "text_fg": "#ffffff",
+        "text_select_bg": "#a855f7",
+    },
+}
 
-def apply_global_theme(root: tk.Tk):
-    style = ttk.Style(root)
-    style.theme_use('clam')  # 'clam' gives us full control over colors
-
-    # Main color scheme (consistent with your new sunken frames)
-    bg              = "#3f3f3f"   # Frame background
-    fg              = "#17c7b8"   # Main text / accent
-    label_fg        = "#249f87"   # LabelFrame title color
-    field_bg        = "#2d2d2d"   # Entry / Treeview background
-    select_bg       = "#17c7b8"   # Selected row/item
-    select_fg       = "#000000"
-    button_bg       = "#333333"
-    button_active   = "#555555"
-    heading_bg      = "#333333"
-    trough          = "#555555"
-
-    # Global widget defaults
-    style.configure('.', background=bg, foreground=fg, font=('Segoe UI', 9))
-    style.configure('TFrame', background=bg)
-    style.configure('TLabel', background=bg, foreground=fg)
-
-    # LabelFrames (your new style)
-    style.configure('TLabelFrame', background=bg, foreground=label_fg,
-                    font=('Times New Roman', 9, 'bold', 'italic', 'underline'),
-                    relief='sunken', borderwidth=2, highlightbackground="#249f87",
-                    highlightcolor="#a9ebde", highlightthickness=1)
-    style.configure('TLabelFrame.Label', foreground=label_fg, background=bg)
-
-    # Buttons
-    style.configure('TButton', font=('Segoe UI', 8), padding=4)
-    style.map('TButton',
-              background=[('active', button_active), ('disabled', button_bg)],
-              foreground=[('disabled', '#888888')])
-
-    # Entries
-    style.configure('TEntry', fieldbackground=field_bg, foreground=fg,
-                    insertcolor=fg, font=('Segoe UI', 9))
-
-    # Treeview - compact and matching your new look
-    style.configure('Treeview',
-                    background=field_bg,
-                    foreground=fg,
-                    fieldbackground=field_bg,
-                    rowheight=18,                    # Much more compact
-                    font=('Segoe UI', 9))
-    style.configure('Treeview.Heading',
-                    background=heading_bg,
-                    foreground=fg,
-                    font=('Segoe UI', 9, 'bold'),
-                    relief='flat')
-    style.map('Treeview',
-              background=[('selected', select_bg)],
-              foreground=[('selected', select_fg)])
-
-    # Progressbar
-    style.configure('Horizontal.TProgressbar',
-                    troughcolor=trough,
-                    background='#00ff80',
-                    thickness=14)
-
-    # Notebook & Tabs
-    style.configure('TNotebook', background=bg, borderwidth=0)
-    style.configure('TNotebook.Tab',
-                    padding=[10, 4],
-                    font=('Segoe UI', 9))
-    style.map('TNotebook.Tab',
-              background=[('selected', bg), ('active', '#444444')],
-              foreground=[('selected', fg), ('active', fg)])
-    
 class AppController:
     def __init__(self, q: queue.Queue):
         self.queue = q
@@ -141,8 +124,106 @@ class MergedApp(tk.Tk):
         self.opt_thread = None
         self.opt_stop_event = None
 
+        self.large_fonts = tk.BooleanVar(value=False)
+        self.keep_previous_results = tk.BooleanVar(value=False)
+        self.current_theme = tk.StringVar(value="Original")
+        self.THEMES = THEMES
+
         self._build_ui()
+
         self.after(100, self.process_queue)
+        self.apply_theme("Original")
+
+    def apply_theme(self, theme_name: str):
+        self.current_theme.set(theme_name)
+        colors = THEMES.get(theme_name, THEMES["Original"])
+        base_font_size = 13 if self.large_fonts.get() else 9
+
+        style = ttk.Style(self)
+        style.theme_use('clam')
+
+        style.configure('.', background=colors["bg"], foreground=colors["fg"],
+                        font=('Segoe UI', base_font_size))
+        style.configure('TFrame', background=colors["bg"])
+        style.configure('TLabel', background=colors["bg"], foreground=colors["label_fg"])
+        style.configure('Treeview', rowheight=base_font_size + 9)  # dynamic row height
+
+        # Proper theming for ttk.Entry / TCombobox / Treeview / Progressbar
+        style.configure('TEntry',
+                        fieldbackground=colors["field_bg"],
+                        foreground=colors["fg"])
+        style.map('TEntry',
+                  fieldbackground=[('selected', colors["select_bg"]),
+                                   ('readonly', colors["field_bg"])],
+                  selectbackground=[('selected', colors["select_bg"])],
+                  selectforeground=[('selected', colors["select_fg"])])
+
+        style.configure('TCombobox',
+                        fieldbackground=colors["field_bg"],
+                        foreground=colors["fg"])
+        style.map('TCombobox',
+                  fieldbackground=[('readonly', colors["field_bg"])])
+
+        style.configure('Treeview',
+                        background=colors["field_bg"],
+                        fieldbackground=colors["bg"],
+                        foreground=colors["fg"])
+        style.map('Treeview',
+                  background=[('selected', colors["select_bg"])],
+                  foreground=[('selected', colors["select_fg"])])
+
+        style.configure('Treeview.Heading',
+                        background=colors.get("heading_bg", colors["bg"]),
+                        foreground=colors["fg"],
+                        font=('Segoe UI', base_font_size, 'bold'))
+        style.map('Treeview.Heading',
+                  background=[('active', colors["button_active"])],
+                  foreground=[('active', colors["fg"])])
+
+        style.configure('Horizontal.TProgressbar',
+                        background=colors["progress_bg"],
+                        troughcolor=colors["trough"])
+
+        # Notebook tab styling
+        style.configure('TNotebook', background=colors["root_bg"])
+        style.configure('TNotebook.Tab', background=colors["bg"], foreground=colors["label_fg"])
+        style.map('TNotebook.Tab',
+                  background=[('selected', colors["select_bg"])],
+                  foreground=[('selected', colors["select_fg"])])
+
+        self.configure(bg=colors["root_bg"])
+
+        if hasattr(self, 'terms_tab'):
+            self.terms_tab.text.configure(
+                bg=colors["text_bg"], fg=colors["text_fg"],
+                insertbackground=colors["text_fg"],
+                selectbackground=colors["text_select_bg"],
+                selectforeground="black",
+                font=('Segoe UI', base_font_size)
+            )
+            heading_size = base_font_size + 4
+            self.terms_tab.text.tag_config("heading", foreground=colors["label_fg"],
+                                            font=('Segoe UI', heading_size + 4, "bold"))
+            self.terms_tab.text.tag_config("subheading", foreground=colors["label_fg"],
+                                            font=('Segoe UI', heading_size + 2, "bold"))
+            self.terms_tab.text.tag_config("label", foreground=colors["label_fg"],
+                                            font=('Segoe UI', base_font_size, "bold"))
+            self.terms_tab.text.tag_config("definition", font=('Segoe UI', base_font_size))
+
+        if hasattr(self, 'settings_tab'):
+            self.settings_tab.update_fonts(base_font_size + 3)
+
+        def update_recursive(parent):
+            for child in parent.winfo_children():
+                if isinstance(child, tk.LabelFrame):
+                    child.configure(bg=colors["bg"], fg=colors["label_fg"],
+                                    highlightbackground=colors["label_fg"])
+                if isinstance(child, tk.Text):  # Only tk.Text gets manual bg (ScrolledText internal). ttk.Entry is themed via style above.
+                    child.configure(bg=colors["text_bg"], fg=colors["text_fg"],
+                                    insertbackground=colors["text_fg"],
+                                    font=('Segoe UI', base_font_size))
+                update_recursive(child)
+        update_recursive(self)
 
     def _build_ui(self):
         nb = ttk.Notebook(self)
@@ -160,7 +241,9 @@ class MergedApp(tk.Tk):
         self.terms_tab = TermsTab(nb)
         nb.add(self.terms_tab, text="Terms")
 
-        # Connect buttons
+        self.settings_tab = SettingsTab(nb, self)
+        nb.add(self.settings_tab, text="Settings")
+
         self.calc_tab.run_button.config(command=self.run_simulation)
         self.calc_tab.sim_stop_button.config(command=self.stop_simulation)
         self.opt_tab.opt_run_button.config(command=self.run_optimizer)

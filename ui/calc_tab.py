@@ -4,6 +4,50 @@ from tkinter import ttk, messagebox
 from typing import List, Tuple
 from simulation_core import SimParams
 from .widgets import ToolTip
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
+
+
+def make_handler(calc_tab):
+    class CustomHandler(BaseHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            self.calc_tab = calc_tab
+            super().__init__(*args, **kwargs)
+
+        def do_GET(self):
+            if self.path == '/get_values':
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                values = {
+                    'bet_size': self.calc_tab.bet_size_var.get(),
+                    'profit_stop': self.calc_tab.profit_stop_var.get(),
+                    'multiplier': self.calc_tab.multiplier_var.get()[:-1],
+                    'win_increase': self.calc_tab.w_var.get(),
+                    'loss_reset': self.calc_tab.l_var.get(),
+                }
+                self.wfile.write(json.dumps(values).encode('utf-8'))
+            else:
+                self.send_error(404)
+
+        def do_POST(self):
+            if self.path == '/set_balance':
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length).decode('utf-8')
+                data = json.loads(post_data)
+                balance = data.get('balance')
+                if balance:
+                    self.calc_tab.after(0, lambda: self.calc_tab.balance_var.set(balance))
+                    self.calc_tab.after(0, self.calc_tab.calculate_values)
+                    self.send_response(200)
+                    self.end_headers()
+                else:
+                    self.send_error(400)
+            else:
+                self.send_error(404)
+
+    return CustomHandler
 
 
 class CalculatorTab(ttk.Frame):
@@ -17,7 +61,7 @@ class CalculatorTab(ttk.Frame):
         self.rowconfigure(2, weight=0)
         self.rowconfigure(3, weight=1)
 
-        # Variables
+        
         self.balance_var = tk.StringVar(value="20")
         self.w_var = tk.StringVar(value="78")
         self.l_var = tk.StringVar(value="5")
@@ -32,6 +76,9 @@ class CalculatorTab(ttk.Frame):
         self.balance_target_var = tk.StringVar()
 
         self.all_entries = []
+
+        self.server = None
+        self.server_thread = None
 
         self._build_calculated_values()
         self._build_parameters()
@@ -90,19 +137,19 @@ class CalculatorTab(ttk.Frame):
             )
             copy_btn.grid(row=i, column=2, sticky="ew", padx=8, pady=5)
 
-        frame.configure(relief="sunken")
         frame.configure(
-            font="-family {Times New Roman} -size 12 -weight bold -slant italic -underline 1"
+            relief="sunken",
+            font="-family {Times New Roman} -size 12 -weight bold -slant italic -underline 1",
+            foreground="#249f87",
+            background="#3f3f3f",
+            highlightbackground="#249f87",
+            highlightcolor="#a9ebde",
+            highlightthickness=2,
+            padx=10,
+            pady=10,
+            takefocus=0  # Fixed: was "2"
         )
-        frame.configure(foreground="#249f87")
         frame.configure(text="Calculated Values")
-        frame.configure(background="#3f3f3f")
-        frame.configure(highlightbackground="#249f87")
-        frame.configure(highlightcolor="#a9ebde")
-        frame.configure(highlightthickness="2")
-        frame.configure(padx="2")
-        frame.configure(pady="2")
-        frame.configure(takefocus="2")
 
     def _build_parameters(self):
         frame = tk.LabelFrame(self)
@@ -158,7 +205,6 @@ class CalculatorTab(ttk.Frame):
         ]
 
         for i, (text, var, tip) in enumerate(left_side):
-            # Updated font
             ttk.Label(frame, text=text, font=("", 11, "bold")).grid(
                 row=i, column=0, sticky="ew", padx=12, pady=4
             )
@@ -168,7 +214,6 @@ class CalculatorTab(ttk.Frame):
             ToolTip(entry, tip)
 
         for i, (text, var, tip) in enumerate(right_side):
-            # Updated font
             ttk.Label(frame, text=text, font=("", 11, "bold")).grid(
                 row=i, column=2, sticky="ew", padx=12, pady=4
             )
@@ -180,6 +225,11 @@ class CalculatorTab(ttk.Frame):
         ttk.Button(
             frame, text="How To Setup", command=self.show_getting_started_info
         ).grid(row=3, column=3, pady=6, sticky="ew", padx=12)
+
+        self.start_server_btn = ttk.Button(
+            frame, text="Start Local Server", command=self.toggle_server
+        )
+        self.start_server_btn.grid(row=3, column=0, columnspan=3, pady=6, sticky="ew", padx=12)
 
     def _build_controls(self):
         frame = tk.LabelFrame(self)
@@ -193,7 +243,6 @@ class CalculatorTab(ttk.Frame):
         self.run_button = ttk.Button(frame, text="Run Simulation")
         self.run_button.grid(row=0, column=0, padx=12, pady=5, sticky="ew")
 
-        # Updated font
         ttk.Label(frame, text="Trials:", font=("", 11, "bold")).grid(
             row=0, column=1, padx=(30, 5), sticky="e"
         )
@@ -354,3 +403,27 @@ class CalculatorTab(ttk.Frame):
             self.sim_tree.delete(item)
         for stat, value in stats:
             self.sim_tree.insert("", "end", values=(stat, value))
+
+    def toggle_server(self):
+        if self.server:
+            self.shutdown_server()
+            self.start_server_btn.config(text="Start Local Server")
+            messagebox.showinfo("Server Stopped", "Local server has been stopped.")
+        else:
+            self.start_local_server()
+            self.start_server_btn.config(text="Stop Local Server")
+            messagebox.showinfo("Server Started", "Local server started at http://localhost:8000")
+
+    def start_local_server(self):
+        handler_class = make_handler(self)
+        self.server = HTTPServer(('localhost', 8000), handler_class)
+        self.server_thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.server_thread.start()
+
+    def shutdown_server(self):
+        if self.server:
+            self.server.shutdown()
+            self.server.server_close()
+            self.server_thread.join()
+            self.server = None
+            self.server_thread = None

@@ -9,7 +9,7 @@ import threading
 from statistics import mean, stdev, median
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-# Optional numpy for faster aggregate stats. If not installed we fall back to statistics.
+
 try:
     import numpy as np
     _HAS_NUMPY = True
@@ -22,10 +22,10 @@ class SimParams:
     starting_balance: float
     bet_div: float
     profit_mult: float
-    w: float  # Win increase (e.g., 0.78)
-    l: int    # Loss reset
-    buffer: float # Buffer (e.g., 1.25)
-    n_trials: int = 1  # Number of trials
+    w: float  
+    l: int    
+    buffer: float 
+    n_trials: int = 1  
 
 class StakeRNG:
     """
@@ -41,7 +41,6 @@ class StakeRNG:
         self.client_seed = client_seed or secrets.token_hex(32)
         self.nonce = nonce
         self._byte_iter = self._byte_generator()
-        # small local cache for batch consumption
         self._cache: List[int] = []
 
     def _byte_generator(self):
@@ -59,10 +58,8 @@ class StakeRNG:
         """Ensure there are at least n bytes in the cache."""
         while len(self._cache) < n:
             try:
-                # consume from generator
                 self._cache.append(next(self._byte_iter))
             except StopIteration:
-                # regenerate generator if unexpectedly exhausted
                 self._byte_iter = self._byte_generator()
                 self._cache.append(next(self._byte_iter))
 
@@ -80,13 +77,10 @@ class StakeRNG:
         floats = []
         for i in range(count):
             chunk = self._cache[i*4:(i+1)*4]
-            # produce fraction exactly like original: sum(byte / 256^(j+1))
             result = sum(value / (256 ** (j + 1)) for j, value in enumerate(chunk))
             roll = result * 10001 / 100
             floats.append(roll)
-        # remove consumed bytes from cache
         del self._cache[:needed_bytes]
-        # advance nonce by count (keeps seed progression semantics consistent)
         self.nonce += count
         return floats
 
@@ -96,7 +90,7 @@ def run_compounded_trial(params: SimParams, batch_size: int = 1024) -> Dict[str,
     Uses StakeRNG.next_roll_batch to fetch rolls in batches for efficiency.
     Returns {"highest_balance": float, "cycles": int, "rounds": int}
     """
-    rng = StakeRNG()  # each trial uses independent server/client seeds and nonce
+    rng = StakeRNG()  
     balance = params.starting_balance
     peak = balance
     cycles = 0
@@ -106,8 +100,6 @@ def run_compounded_trial(params: SimParams, batch_size: int = 1024) -> Dict[str,
         bet = balance / params.bet_div
         profit_stop = bet * params.profit_mult
         target = balance + profit_stop
-
-        # multiplier m computed exactly as in original implementation
         m = ((1 + params.w) * params.l) * params.buffer
         if m == 0:
             win_chance = 0.0
@@ -116,31 +108,23 @@ def run_compounded_trial(params: SimParams, batch_size: int = 1024) -> Dict[str,
 
         current_bet = bet
         loss_streak = 0
-
-        # roll batching state
         batch: List[float] = []
         idx = 0
-
         while balance > 0 and balance < target:
-            # refill batch when exhausted
             if idx >= len(batch):
-                # request a batch; smaller batches are fine near the end
                 batch = rng.next_roll_batch(batch_size)
                 idx = 0
                 if not batch:
-                    # improbable, but protect
                     break
             roll = batch[idx]
             idx += 1
 
             rounds += 1
             if roll < win_chance * 100:
-                # win
                 balance += current_bet * (m - 1)
                 current_bet *= (1 + params.w)
                 loss_streak = 0
             else:
-                # loss
                 balance -= current_bet
                 loss_streak += 1
                 if loss_streak >= params.l:
@@ -151,7 +135,6 @@ def run_compounded_trial(params: SimParams, batch_size: int = 1024) -> Dict[str,
                 peak = balance
 
         if balance < target:
-            # busted or couldn't reach target
             break
         cycles += 1
 
@@ -172,7 +155,6 @@ def run_many_trials(params: SimParams,
     total = max(1, params.n_trials)
 
     if not parallel or params.n_trials <= 1:
-        # Sequential fallback, deterministic and respects stop_event per-iteration
         for i in range(params.n_trials):
             if stop_event and stop_event.is_set():
                 break
@@ -182,33 +164,27 @@ def run_many_trials(params: SimParams,
                 progress_callback(i + 1, params.n_trials)
         return results
 
-    # Use ProcessPoolExecutor for CPU-bound trials
     cpu_count = os.cpu_count() or 1
     max_workers = min(cpu_count, params.n_trials,  max(1, cpu_count))
     futures = []
     with ProcessPoolExecutor(max_workers=max_workers) as exe:
-        # Submit tasks but check stop_event between submissions
         submitted = 0
         for _ in range(params.n_trials):
             if stop_event and stop_event.is_set():
                 break
             futures.append(exe.submit(run_compounded_trial, params))
             submitted += 1
-
-        # collect results as tasks complete
         done_count = 0
         for fut in as_completed(futures):
             try:
                 res = fut.result()
             except Exception:
-                # If a worker failed, skip result but continue
                 res = {"highest_balance": 0.0, "cycles": 0, "rounds": 0}
             results.append(res)
             done_count += 1
             if progress_callback:
                 progress_callback(done_count, submitted)
             if stop_event and stop_event.is_set():
-                # cannot kill running processes but stop collecting further progress
                 break
     return results
 

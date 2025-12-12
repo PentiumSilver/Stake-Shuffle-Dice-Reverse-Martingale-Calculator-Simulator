@@ -12,27 +12,26 @@ class ResultsTab(ttk.Frame):
         style = ttk.Style()
 
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=0)  # For scrollbars
-        self.rowconfigure(1, weight=1)  # Treeview expands
-        self.rowconfigure(2, weight=0)  # H-scrollbar
-        self.rowconfigure(3, weight=0)  # Buttons
+        self.columnconfigure(1, weight=0)
+        self.rowconfigure(1, weight=1)
+        self.rowconfigure(2, weight=0)
+        self.rowconfigure(3, weight=0)
 
-        # MODIFIED FOR PRECISE MEASUREMENT: Set minwidth on columns
-        self.cols = ("BetDiv", "ProfitMult", "W%", "L", "Buffer%", "AvgHigh", "StdDev", "MaxHigh", "AvgCycles", "AvgRounds", "CycleSuccess%", "Bust%", "Score")
+        # Updated column order with new columns
+        self.cols = ("StartingBalance", "Trials", "BetDiv", "ProfitMult", "W%", "L", "Buffer%",
+                     "AvgHigh", "StdDev", "MaxHigh", "AvgCycles", "AvgRounds",
+                     "CycleSuccess%", "Bust%", "Score")
+
         self.res_tree = ttk.Treeview(self, columns=self.cols, show="headings", height=20)
-        style.configure('Treeview', rowheight=18)   # add this line somewhere after theme is applied
+        style.configure('Treeview', rowheight=18)
         for col in self.cols:
             self.res_tree.heading(col, text=col, command=lambda c=col: self.sort_res_column(c, False))
-            self.res_tree.column(col, anchor="center", minwidth=80, width=100)  # MODIFIED: minwidth for precision
-        self.res_tree.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)  # MODIFIED: sticky
+            self.res_tree.column(col, anchor="center", minwidth=80, width=100)
+        self.res_tree.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
+
         v_scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.res_tree.yview)
-        v_scrollbar.grid(row=1, column=2, sticky="ns")  # Changed from row=0
+        v_scrollbar.grid(row=1, column=2, sticky="ns")
         self.res_tree.configure(yscrollcommand=v_scrollbar.set)
-
-        h_scrollbar = ttk.Scrollbar(self, orient="horizontal", command=self.res_tree.xview)
-        h_scrollbar.grid(row=2, column=0, columnspan=2, sticky="ew")
-        self.res_tree.configure(xscrollcommand=h_scrollbar.set)
-
 
         h_scrollbar = ttk.Scrollbar(self, orient="horizontal", command=self.res_tree.xview)
         h_scrollbar.grid(row=2, column=0, columnspan=2, sticky="ew")
@@ -41,14 +40,22 @@ class ResultsTab(ttk.Frame):
         ttk.Button(self, text="Save to CSV", command=self.save_opt_csv).grid(row=3, column=0, pady=5, sticky="e")
         self.apply_button = ttk.Button(self, text="Apply Selected to Calculator")
         self.apply_button.grid(row=3, column=0, pady=5, sticky="w")
-        
+
+        # Configure tags for alternating row shading (using dark shades to match common themes)
+        self.res_tree.tag_configure("evenrow", background="#2d2d2d")
+        self.res_tree.tag_configure("oddrow", background="#383838")
+
     def display_opt_results(self, df: pd.DataFrame):
-        self.clear_opt_results()
+        app = self.master.master  # MergedApp instance
+        if not app.keep_previous_results.get():
+            self.clear_opt_results()
         if df.empty:
             messagebox.showinfo("No Results", "No results were produced.")
             return
         for _, row in df.iterrows():
             vals = (
+                f"{row['StartingBalance']:.2f}",
+                f"{row['Trials']}",
                 f"{row['BetDiv']:.2f}",
                 f"{row['ProfitMult']:.2f}",
                 f"{row['W%']:.2f}",
@@ -64,6 +71,7 @@ class ResultsTab(ttk.Frame):
                 f"{row['Score']:.2f}",
             )
             self.res_tree.insert("", "end", values=vals)
+        self.update_row_colors()
 
     def clear_opt_results(self):
         for i in self.res_tree.get_children():
@@ -89,6 +97,7 @@ class ResultsTab(ttk.Frame):
         for index, (val, k) in enumerate(l):
             self.res_tree.move(k, "", index)
         self.res_tree.heading(col, command=lambda: self.sort_res_column(col, not reverse))
+        self.update_row_colors()
 
     def apply_selected_to_calculator(self, calc_tab: "CalculatorTab"):
         sel = self.res_tree.selection()
@@ -97,11 +106,12 @@ class ResultsTab(ttk.Frame):
             return
         vals = self.res_tree.item(sel[0])["values"]
         try:
-            bet_div = float(vals[0])
-            profit_mult = float(vals[1])
-            w_pct = float(vals[2])
-            l = int(float(vals[3]))
-            buffer_pct = float(vals[4])
+            # StartingBalance and Trials are now present but not used for apply
+            bet_div = float(vals[2])
+            profit_mult = float(vals[3])
+            w_pct = float(vals[4])
+            l = int(float(vals[5]))
+            buffer_pct = float(vals[6])
 
             calc_tab.bet_div_var.set(str(bet_div))
             calc_tab.profit_mult_var.set(str(profit_mult))
@@ -112,3 +122,10 @@ class ResultsTab(ttk.Frame):
             messagebox.showinfo("Applied", "Selected parameters applied to Calculator / Simulator tab.")
         except Exception as e:
             messagebox.showerror("Error", f"Could not apply values: {e}")
+
+    def update_row_colors(self):
+        """Apply alternating row colors based on current display order."""
+        children = self.res_tree.get_children()
+        for i, iid in enumerate(children):
+            tag = "evenrow" if i % 2 == 0 else "oddrow"
+            self.res_tree.item(iid, tags=(tag,))

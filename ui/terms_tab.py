@@ -99,7 +99,7 @@ class TermsTab(ttk.Frame):
         )
         self.text.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
 
-        # Headings, subheadings, and label styles
+        
         heading_color = "#249f87"
 
         self.text.tag_config(
@@ -127,7 +127,7 @@ class TermsTab(ttk.Frame):
             foreground="#ffffff",
         )
 
-        # Optional: slightly increase line spacing for readability
+       
         self.text.tag_config("base", spacing1=1, spacing3=1)
 
         for raw_line in TERMS_TEXT.splitlines():
@@ -138,12 +138,12 @@ class TermsTab(ttk.Frame):
                 self.text.insert("end", "\n", "base")
                 continue
 
-            # Top-level headings
+           
             if stripped.isupper() and stripped.endswith("TAB"):
                 self.text.insert("end", stripped + "\n", ("heading", "base"))
                 continue
 
-            # Subheadings
+           
             if stripped in {
                 "PARAMETERS",
                 "CALCULATED VALUES",
@@ -156,8 +156,6 @@ class TermsTab(ttk.Frame):
                 self.text.insert("end", stripped + "\n", ("subheading", "base"))
                 continue
 
-            # Label + definition lines
-            # Handle both en dash and hyphen-minus variants
             if " – " in stripped:
                 label_text, definition_text = stripped.split(" – ", 1)
             elif " - " in stripped:

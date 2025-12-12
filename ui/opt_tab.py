@@ -12,14 +12,13 @@ class OptimizerTab(ttk.Frame):
 
         self.configure(style="Optimizer.TFrame")
         
-        # MODIFIED FOR RESIZE: Allow full expansion
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(1, weight=0)  # Params frame fixed
-        self.rowconfigure(2, weight=0)  # Progress fixed
-        self.rowconfigure(3, weight=0)  # Status fixed
-        self.rowconfigure(4, weight=1)  # Buttons expand vertically if needed
+        self.rowconfigure(1, weight=0)  
+        self.rowconfigure(2, weight=0)  
+        self.rowconfigure(3, weight=0)  
+        self.rowconfigure(4, weight=1)  
 
-        # State variables (unchanged)
+        
         self.opt_balance_var = tk.StringVar(value="20")
         self.opt_n_trials_var = tk.StringVar(value="10")
         self.opt_bet_div_var = tk.StringVar(value="256,500")
@@ -31,10 +30,10 @@ class OptimizerTab(ttk.Frame):
         self._build_param_frame()
         
         self.opt_progress = ttk.Progressbar(self, orient="horizontal", mode="determinate")
-        self.opt_progress.grid(row=2, column=0, padx=10, pady=5, sticky="ew")  # MODIFIED: sticky for full width
+        self.opt_progress.grid(row=2, column=0, padx=10, pady=5, sticky="ew")  
 
         self.opt_status_label = ttk.Label(self, text="Idle", anchor="center")
-        self.opt_status_label.grid(row=3, column=0, padx=10, pady=5, sticky="ew")  # MODIFIED: sticky
+        self.opt_status_label.grid(row=3, column=0, padx=10, pady=5, sticky="ew")  
 
         self.opt_stop_button = ttk.Button(self, text="Stop", state="disabled")
         self.opt_stop_button.grid(row=4, column=0, pady=10, sticky="e", padx=10)
@@ -44,19 +43,22 @@ class OptimizerTab(ttk.Frame):
 
     def _build_param_frame(self):
         frame = tk.LabelFrame(self, text="Parameter Ranges")
-        frame.configure(relief='sunken')
-        frame.configure(font="-family {Times New Roman} -size 12 -weight bold -slant italic -underline 1")
-        frame.configure(foreground="#249f87")
-        frame.configure(relief="sunken")
-        frame.configure(background="#3f3f3f")
-        frame.configure(highlightbackground="#249f87")
-        frame.configure(highlightcolor="#a9ebde")
-        frame.configure(highlightthickness="2")
-        frame.configure(padx="10")
-        frame.configure(pady="10")
-        frame.configure(takefocus="2")
-        frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")  # MODIFIED: sticky="ew"
+        frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")  
         frame.columnconfigure(1, weight=1)
+        
+        # Cleaned up duplicate configures and fixed invalid takefocus
+        frame.configure(
+            relief="sunken",
+            font="-family {Times New Roman} -size 12 -weight bold -slant italic -underline 1",
+            foreground="#249f87",
+            background="#3f3f3f",
+            highlightbackground="#249f87",
+            highlightcolor="#a9ebde",
+            highlightthickness=2,
+            padx=10,
+            pady=10,
+            takefocus=0,  # Fixed: was "2" (invalid)
+        )
         
         labels = [
             ("Starting Balance", self.opt_balance_var, "Initial simulation balance"),

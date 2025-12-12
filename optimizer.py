@@ -14,9 +14,9 @@ class OptParams:
     starting_balance: float
     bet_div_range: List[float]
     profit_mult_range: List[float]
-    w_range: List[float]  # In percentage (raw numbers, will be divided by 100)
+    w_range: List[float] 
     l_range: List[int]
-    buffer_range: List[float]  # In percentage (raw numbers, e.g. 25 -> 25)
+    buffer_range: List[float] 
     n_trials: int
 
 def parse_range(text: str, integer: bool = False) -> List:
@@ -59,7 +59,7 @@ def parse_range(text: str, integer: bool = False) -> List:
                 return list(range(int(start), int(end) + step_dir, step_dir))
             if start == end:
                 return [float(start)]
-            # default to 10 evenly spaced values when step unspecified
+            
             return [start + i * (end - start) / 9 for i in range(10)]
 
         return [int(text) if integer else float(text)]
@@ -67,20 +67,17 @@ def parse_range(text: str, integer: bool = False) -> List:
         return []
 
 def _run_one_combo(args):
-    """
-    Worker function run inside a process pool.
-    Runs trials sequentially (parallel=False passed to avoid nested process pools).
-    Returns the result dict for this combo.
-    """
     (bet_div, profit_mult, w, l, buffer, starting_balance, n_trials) = args
     params = SimParams(starting_balance, bet_div, profit_mult, w, l, buffer, n_trials)
-    # run_trials_collect_stats called with parallel=False to avoid nested process pools
+   
     avg_high, std_high, max_high, avg_cycles, avg_rounds, cycle_success_rate, bust_rate = run_trials_collect_stats(params, stop_event=None, parallel=False)
     score = (avg_high - starting_balance) / std_high if std_high != 0 else 0.0
     return {
+        "StartingBalance": round(float(starting_balance), 2),
+        "Trials": int(n_trials),
         "BetDiv": round(float(bet_div), 2),
         "ProfitMult": round(float(profit_mult), 2),
-        "W%": round((w * 100), 2),
+        "W%": round(w * 100, 2),
         "L": int(l),
         "Buffer%": round((buffer - 1) * 100, 2),
         "AvgHigh": round(avg_high, 2),
@@ -116,7 +113,7 @@ def optimize_parameters_manual(opt_params: OptParams,
         q.put(("done", pd.DataFrame()))
         return
 
-    # limit workers to a reasonable number to avoid oversubscription
+    
     cpu_count = min(32, (os.cpu_count() or 1))
     max_workers = min(cpu_count, total)
 
@@ -126,12 +123,12 @@ def optimize_parameters_manual(opt_params: OptParams,
         done = 0
         for fut in as_completed(futures):
             if stop_event.is_set():
-                # cannot forcefully kill running worker processes here. We stop collecting more results.
+                
                 break
             try:
                 res = fut.result()
             except Exception:
-                # On failure produce a safe dummy row
+            
                 res = {
                     "BetDiv": 0.0, "ProfitMult": 0.0, "W%": 0.0, "L": 0, "Buffer%": 0.0,
                     "AvgHigh": 0.0, "StdDev": 0.0, "MaxHigh": 0.0, "AvgCycles": 0.0, "AvgRounds": 0.0,
