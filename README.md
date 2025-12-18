@@ -26,6 +26,7 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
 10.) You should be good to go once the UI shows.
 
 
+'''
 
 // ==UserScript==
 // @name         Dice Tool
@@ -1179,6 +1180,8 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     transition: 'background 0.2s'
                 });
                 btn.onmouseover = () => { btn.style.background = '#30d4b3'; };
+
+                '''
                 btn.onmouseout = () => { btn.style.background = '#249f87'; };
                 btn.onclick = action.fn;
                 gui.appendChild(btn);
