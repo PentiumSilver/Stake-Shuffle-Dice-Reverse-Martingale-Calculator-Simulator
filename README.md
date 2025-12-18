@@ -7,7 +7,7 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
 
 2.) Create a new Tampermonkey script.
 
-3.) Delete the pre generated code from the newly created script.
+3.) Delete the pre generated code from the newly created script. 
 
 4.) Copy the code at the bottom of this ReadMe, and paste it into Tampermonkey.
 
