@@ -33,6 +33,8 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
 // @version      1
 // @description  On Site Dice Tool Extension
 // @author       me
+// @match        https://stake.com/casino/games/primedice*
+// @match        https://stake.us/casino/games/primedice*
 // @match        https://shuffle.us/games/originals/dice*
 // @match        https://stake.us/casino/games/dice*
 // @match        https://stake.com/casino/games/dice*
@@ -1179,9 +1181,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     transition: 'background 0.2s'
                 });
                 btn.onmouseover = () => { btn.style.background = '#30d4b3'; };
-'''
-
-                
                 btn.onmouseout = () => { btn.style.background = '#249f87'; };
                 btn.onclick = action.fn;
                 gui.appendChild(btn);
@@ -1189,3 +1188,4 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
         })();
     }
 })();
+'''
