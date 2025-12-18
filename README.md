@@ -26,9 +26,8 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
 10.) You should be good to go once the UI shows.
 
 
-
-
-'// ==UserScript==
+'''javascript
+// ==UserScript==
 // @name         Dice Tool
 // @namespace    http://tampermonkey.net/
 // @version      1
@@ -1179,7 +1178,8 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     cursor: 'pointer',
                     transition: 'background 0.2s'
                 });
-                btn.onmouseover = () => { btn.style.background = '#30d4b3'; };'
+                btn.onmouseover = () => { btn.style.background = '#30d4b3'; };
+'''
 
                 
                 btn.onmouseout = () => { btn.style.background = '#249f87'; };
