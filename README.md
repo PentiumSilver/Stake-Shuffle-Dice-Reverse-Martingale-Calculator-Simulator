@@ -26,7 +26,7 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
 10.) You should be good to go once the UI shows.
 
 
-'''javascript
+```
 // ==UserScript==
 // @name         Dice Tool
 // @namespace    http://tampermonkey.net/
@@ -1188,4 +1188,4 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
         })();
     }
 })();
-'''
+```
