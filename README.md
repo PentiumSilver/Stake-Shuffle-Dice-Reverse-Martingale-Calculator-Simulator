@@ -28,25 +28,24 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
 
 ```
 // ==UserScript==
-// @name         Dice Tool
-// @namespace    http://tampermonkey.net/
-// @version      1
-// @description  On Site Dice Tool Extension
-// @author       me
-// @match        https://stake.com/casino/games/primedice*
-// @match        https://stake.us/casino/games/primedice*
-// @match        https://shuffle.us/games/originals/dice*
-// @match        https://stake.us/casino/games/dice*
-// @match        https://stake.com/casino/games/dice*
-// @grant        GM_xmlhttpRequest
-// @run-at       document-end
+// @name Dice Tool
+// @namespace http://tampermonkey.net/
+// @version 1
+// @description On Site Dice Tool Extension
+// @author me
+// @match https://stake.com/casino/games/primedice
+// @match https://stake.us/casino/games/primedice
+// @match https://shuffle.us/games/originals/dice
+// @match https://stake.us/casino/games/dice
+// @match https://stake.com/casino/games/dice
+// @grant GM_xmlhttpRequest
+// @run-at document-end
 // ==/UserScript==
 
 (function () {
     'use strict';
-
     // ←←←←←←←←←←←←←←←← SHUFFLE.US ←←←←←←←←←←←←←←←←
-    if (location.hostname === 'shuffle.us') {
+    if (location.hostname.includes('shuffle.us')) {
         (function () {
             'use strict';
             const sleep = ms => new Promise(res => setTimeout(res, ms));
@@ -69,7 +68,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 }
                 return null;
             };
-
             const setNativeValue = (element, value) => {
                 const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
                 const prototype = Object.getPrototypeOf(element);
@@ -191,27 +189,22 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 try {
                     const v = await getValues();
                     const { bet_size, profit_stop, multiplier, win_increase, loss_reset } = v;
-
                     const advancedTab = document.getElementById('advanced-bet');
                     if (advancedTab && !advancedTab.classList.contains('TabView_active__G842W')) {
                         advancedTab.click();
                         await sleep(800);
                     }
-
                     const betInfoInputs = document.querySelectorAll('input#betInfo');
                     if (betInfoInputs.length < 2) throw "betInfo inputs not found";
                     setNativeValue(betInfoInputs[0], multiplier);
                     await sleep(600);
                     const winChance = betInfoInputs[1].value;
-
                     const betInput = document.querySelector('input[data-testid="bet-amount"]');
                     if (betInput) setNativeValue(betInput, bet_size);
-
                     const createBtn = await waitForText('button', 'Create strategy');
                     if (!createBtn) throw "Create strategy button not found";
                     createBtn.click();
                     await sleep(800);
-
                     const labels = Array.from(document.querySelectorAll('label'));
                     const nameLabel = labels.find(l => l.textContent.includes('Strategy name'));
                     let nameInput = null;
@@ -220,8 +213,7 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                         nameInput = container.querySelector('input');
                     }
                     if (!nameInput) {
-                        nameInput = document.querySelector('.ModalContent_modalContent__rbnMN input[type="text"]') ||
-                            document.querySelector('.ModalContent_modalContent__rbnMN input:not([type="hidden"])');
+                        nameInput = document.querySelector('.ModalContent_modalContent__rbnMN input[type="text"]') || document.querySelector('.ModalContent_modalContent__rbnMN input:not([type="hidden"])');
                     }
                     if (!nameInput) throw "Could not locate Strategy Name input field.";
                     nameInput.focus();
@@ -232,20 +224,16 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                         setNativeValue(nameInput, `${multiplier}x`);
                         await sleep(300);
                     }
-
                     const getStartedBtn = await waitForText('button', 'Get Started');
                     if (!getStartedBtn) throw "Get Started button not found";
                     getStartedBtn.click();
-
                     const addBtn = await waitForText('button', 'Add new condition block', 10000);
                     if (!addBtn) throw "Add condition block button not found (Strategy creation likely failed at name step)";
-
                     for (let i = 0; i < 4; i++) {
                         addBtn.click();
                         await sleep(500);
                     }
                     await sleep(1000);
-
                     const headers = document.querySelectorAll('.AdvancedDiceCondition_header__jDZzw');
                     if (headers.length < 4) throw `Only ${headers.length} conditions created.`;
                     for (let i = 0; i < 4; i++) {
@@ -266,13 +254,11 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                             setNativeValue(inputs[0], '0.00');
                             setSelectValue(selects[2], 'setWinChance');
                             await sleep(300);
-
                             const refreshedInputs = conditionDiv.querySelectorAll('input[type="number"]');
                             const winChanceInput = refreshedInputs[1];
                             if (!winChanceInput) throw 'Win chance input not found after re-render';
                             setNativeValue(winChanceInput, winChance);
-                        }
-                        else if (i === 1) {
+                        } else if (i === 1) {
                             setSelectValue(selects[0], 'every');
                             setNativeValue(inputs[0], '1');
                             setSelectValue(selects[1], 'wins');
@@ -282,14 +268,12 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                             const increaseInput = refreshedInputs[1];
                             if (!increaseInput) throw 'Increase % input not found after re-render';
                             setNativeValue(increaseInput, win_increase);
-                        }
-                        else if (i === 2) {
+                        } else if (i === 2) {
                             setSelectValue(selects[0], 'everyStreakOf');
                             setNativeValue(inputs[0], loss_reset);
                             setSelectValue(selects[1], 'losses');
                             setSelectValue(selects[2], 'resetBetAmount');
-                        }
-                        else if (i === 3) {
+                        } else if (i === 3) {
                             setSelectValue(selects[0], 'profit');
                             setSelectValue(selects[1], 'greaterThanOrEqualTo');
                             setNativeValue(inputs[0], profit_stop);
@@ -306,17 +290,30 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             // ── GUI ───────────────────────────────────────
             const gui = document.createElement('div');
             Object.assign(gui.style, {
-                position: 'fixed', top: '80px', right: '10px', zIndex: 99999,
-                background: '#1a1a1a', padding: '8px 10px', borderRadius: '8px',
-                border: '2px solid #7717ff', boxShadow: '0 0 12px rgba(119,23,255,0.6)',
-                color: '#fff', width: '195px', fontFamily: 'Segoe UI,Arial,sans-serif'
+                position: 'fixed',
+                top: '80px',
+                right: '10px',
+                zIndex: 99999,
+                background: '#1a1a1a',
+                padding: '8px 10px',
+                borderRadius: '8px',
+                border: '2px solid #7717ff',
+                boxShadow: '0 0 12px rgba(119,23,255,0.6)',
+                color: '#fff',
+                width: '195px',
+                fontFamily: 'Segoe UI,Arial,sans-serif'
             });
             let offsetX = 0, offsetY = 0;
             const title = document.createElement('div');
             title.textContent = 'Shuffle Dice Tool';
             Object.assign(title.style, {
-                textAlign: 'center', fontWeight: 'bold', marginBottom: '6px',
-                color: '#7717ff', fontSize: '15px', cursor: 'move', userSelect: 'none'
+                textAlign: 'center',
+                fontWeight: 'bold',
+                marginBottom: '6px',
+                color: '#7717ff',
+                fontSize: '15px',
+                cursor: 'move',
+                userSelect: 'none'
             });
             title.addEventListener('mousedown', (e) => {
                 if (e.button !== 0) return;
@@ -335,7 +332,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             });
-
             console.log('Script loaded');
             const counterContainer = document.createElement('div');
             counterContainer.id = 'draggable-counter';
@@ -352,12 +348,10 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             let target = 10;
             let lossCounter = 0;
             let volume = 1.0;
-
             const counterSpan = document.createElement('span');
             counterSpan.innerText = `${counter}`;
             counterSpan.style.transition = 'transform 0.3s';
             counterContainer.appendChild(counterSpan);
-
             const controlsDiv = document.createElement('div');
             Object.assign(controlsDiv.style, {
                 display: 'flex',
@@ -366,14 +360,12 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 marginTop: '5px'
             });
             counterContainer.appendChild(controlsDiv);
-
             // Add label
             const label = document.createElement('span');
             label.textContent = 'Stop after streak of ';
             label.style.fontSize = '12px';
             label.style.marginRight = '5px';
             controlsDiv.appendChild(label);
-
             const targetInput = document.createElement('input');
             targetInput.type = 'number';
             targetInput.min = '0';
@@ -384,7 +376,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             targetInput.style.color = '#FFFFFF';
             targetInput.style.border = '1px solid #7717ff';
             controlsDiv.appendChild(targetInput);
-
             const resetButton = document.createElement('button');
             resetButton.innerText = 'Reset';
             resetButton.style.fontSize = '10px';
@@ -398,7 +389,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             resetButton.onmouseover = () => { resetButton.style.backgroundColor = '#a166ff'; };
             resetButton.onmouseout = () => { resetButton.style.backgroundColor = '#7717ff'; };
             controlsDiv.appendChild(resetButton);
-
             const lossDiv = document.createElement('div');
             lossDiv.style.fontSize = '15px';
             lossDiv.style.marginTop = '5px';
@@ -409,7 +399,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             lossSpan.style.transition = 'transform 0.3s, color 0.3s';
             lossDiv.appendChild(lossSpan);
             counterContainer.appendChild(lossDiv);
-
             const volumeDiv = document.createElement('div');
             Object.assign(volumeDiv.style, {
                 display: 'flex',
@@ -431,12 +420,10 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             volumeDiv.appendChild(volumeIcon);
             volumeDiv.appendChild(volumeSlider);
             counterContainer.appendChild(volumeDiv);
-
             targetInput.addEventListener('change', () => {
                 target = parseInt(targetInput.value) || 0;
                 console.log(`Target updated to ${target}`);
             });
-
             resetButton.addEventListener('click', () => {
                 counter = 0;
                 lossCounter = 0;
@@ -444,7 +431,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 updateLoss();
                 console.log('Counter manually reset to 0');
             });
-
             volumeSlider.addEventListener('input', () => {
                 volume = parseInt(volumeSlider.value) / 100;
                 if (volume === 0) {
@@ -457,24 +443,19 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     volumeIcon.textContent = '🔊';
                 }
             });
-
             function updateCounter() {
                 counterSpan.innerText = `${counter}`;
             }
-
             function updateLoss() {
                 lossSpan.innerText = `${lossCounter}`;
                 lossSpan.style.color = lossCounter > 0 ? 'red' : 'inherit';
             }
-
             function animateSpan(span) {
                 span.style.transform = 'scale(1.2)';
                 setTimeout(() => { span.style.transform = 'scale(1)'; }, 300);
             }
-
             updateCounter();
             updateLoss();
-
             function playBeep() {
                 if (volume === 0) return;
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -488,7 +469,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 oscillator.start();
                 setTimeout(() => oscillator.stop(), 200);
             }
-
             function stopAutoplay() {
                 const stopButton = document.querySelector('button[data-testid="bet-button"] span.ButtonVariants_buttonContent__mRPrs');
                 if (stopButton && stopButton.innerText.includes('Stop Autoplay') && !stopButton.closest('button').disabled) {
@@ -498,10 +478,8 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     console.log('Stop button not found, text does not match, or button is disabled');
                 }
             }
-
             let prev3Active = false;
             let lastSeenText = '';
-
             function initCounter() {
                 const conditionContainer = document.querySelector('.AdvancedDiceBet_conditionContainer__6o_z9');
                 const resultsWrapper = document.querySelector('.OriginalGameRecentResult_originalGameResultsWrapper__aCNPr');
@@ -510,7 +488,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     return false; // Not found yet
                 }
                 console.log('Containers found');
-
                 const initialNewest = resultsWrapper.children[0];
                 if (initialNewest) {
                     const initialButton = initialNewest.querySelector('button');
@@ -518,33 +495,25 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                         lastSeenText = initialButton.innerText;
                     }
                 }
-
                 function checkCondition3() {
                     const buttons = conditionContainer.querySelectorAll('button.AdvancedDiceConditionTag_condition__8L8IB');
                     let condition3Button = null;
-
                     buttons.forEach((button) => {
                         if (button.innerText.trim() === '3') {
                             condition3Button = button;
                         }
                     });
-
                     if (!condition3Button) return;
-
                     const tagDiv = condition3Button.querySelector('div.AdvancedDiceConditionTag_tag__gdVMG');
                     if (!tagDiv) return;
-
                     const current3Active = tagDiv.classList.contains('AdvancedDiceConditionTag_active__7Rex1');
-
                     if (current3Active && !prev3Active) {
                         counter = 0;
                         updateCounter();
                         console.log('Condition 3 active detected, counter reset to 0');
                     }
-
                     prev3Active = current3Active;
                 }
-
                 const resultsObserver = new MutationObserver(() => {
                     const newest = resultsWrapper.children[0];
                     if (!newest) return;
@@ -572,29 +541,14 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                         }
                     }
                 });
-
-                resultsObserver.observe(resultsWrapper, {
-                    childList: true,
-                    subtree: true,
-                    attributes: true
-                });
-
+                resultsObserver.observe(resultsWrapper, { childList: true, subtree: true, attributes: true });
                 const conditionObserver = new MutationObserver(() => {
                     checkCondition3();
                 });
-
-                conditionObserver.observe(conditionContainer, {
-                    attributes: true,
-                    attributeFilter: ['class'],
-                    childList: true,
-                    subtree: true
-                });
-
+                conditionObserver.observe(conditionContainer, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
                 checkCondition3();
-
                 return true;
             }
-
             if (!initCounter()) {
                 const pollInterval = setInterval(() => {
                     if (initCounter()) {
@@ -614,10 +568,17 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 const btn = document.createElement('button');
                 btn.textContent = action.text;
                 Object.assign(btn.style, {
-                    width: '100%', margin: '4px 0', padding: '8px',
-                    background: '#7717ff', border: 'none', borderRadius: '6px',
-                    color: 'white', fontWeight: 'bold', fontSize: '13.5px',
-                    cursor: 'pointer', transition: 'background 0.2s'
+                    width: '100%',
+                    margin: '4px 0',
+                    padding: '8px',
+                    background: '#7717ff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '13.5px',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s'
                 });
                 btn.onmouseover = () => { btn.style.background = '#a166ff'; };
                 btn.onmouseout = () => { btn.style.background = '#7717ff'; };
@@ -626,9 +587,8 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             });
         })();
     }
-
     // ←←←←←←←←←←←←←←←← STAKE.US / STAKE.COM ←←←←←←←←←←←←←←←←
-    if (location.hostname === 'stake.us' || location.hostname === 'stake.com') {
+    if (location.hostname.includes('stake.us') || location.hostname.includes('stake.com')) {
         (function () {
             'use strict';
             const sleep = ms => new Promise(res => setTimeout(res, ms));
@@ -657,8 +617,7 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             };
             // ── Export Balance ─────────────────────
             async function exportBalance() {
-                const el = document.querySelector('span.ds-body-md-strong[data-ds-text="true"][style*="max-width: 16ch"]')
-                            || document.querySelector('span.ds-body-md-strong[data-ds-text="true"]');
+                const el = document.querySelector('span.ds-body-md-strong[data-ds-text="true"][style*="max-width: 16ch"]') || document.querySelector('span.ds-body-md-strong[data-ds-text="true"]');
                 if (!el) return alert('Balance element not found');
                 const balanceText = el.textContent.trim().replace(/,/g, '');
                 const balance = parseFloat(balanceText);
@@ -703,7 +662,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                         return;
                     }
                     editButton.click();
-
                     setTimeout(() => {
                         const editBtns = document.querySelectorAll('button[data-testid="conditional-block-edit"]');
                         if (editBtns.length < 4) {
@@ -741,7 +699,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     }, 1000);
                 });
             }
-
             async function importNewStrategy() {
                 try {
                     const v = await getValues();
@@ -766,9 +723,7 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     const nameInput = await waitFor('input[data-testid="strategy-name-input"]');
                     nameInput.value = `${multiplier}x`;
                     trigger(nameInput);
-                    const getStartedBtn = Array.from(document.querySelectorAll('div, button')).find(el =>
-                        el.textContent.trim() === 'Get Started' || el.textContent.trim() === 'Get started'
-                    );
+                    const getStartedBtn = Array.from(document.querySelectorAll('div, button')).find(el => el.textContent.trim() === 'Get Started' || el.textContent.trim() === 'Get started' );
                     if (!getStartedBtn) throw "Get Started button not found";
                     getStartedBtn.click();
                     await sleep(1500);
@@ -780,64 +735,77 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     await sleep(1000);
                     let editPencils = document.querySelectorAll('svg[data-ds-icon="Edit"]');
                     if (editPencils.length < 4) throw `Only ${editPencils.length} conditions created`;
-
                     editPencils[0].closest('button').click();
                     await sleep(600);
                     const profitRadio1 = await waitFor('label[data-testid="condition-type-radio-profit"]');
                     profitRadio1.click();
                     await sleep(300);
                     let sel = await waitFor('select[data-testid="condition-profit-type"]');
-                    sel.value = 'balance'; trigger(sel);
+                    sel.value = 'balance';
+                    trigger(sel);
                     sel = await waitFor('select[data-testid="condition-profit-term-type-options"]');
-                    sel.value = 'greaterThanOrEqualTo'; trigger(sel);
+                    sel.value = 'greaterThanOrEqualTo';
+                    trigger(sel);
                     let inp = await waitFor('input[data-testid="condition-profit-amount-input"]');
-                    inp.value = '0.00'; trigger(inp);
+                    inp.value = '0.00';
+                    trigger(inp);
                     sel = await waitFor('select[data-testid="condition-action-options"]');
-                    sel.value = 'setWinChance'; trigger(sel);
+                    sel.value = 'setWinChance';
+                    trigger(sel);
                     inp = await waitFor('input[data-testid="condition-action-percentage-input"]');
-                    inp.value = winChance; trigger(inp);
+                    inp.value = winChance;
+                    trigger(inp);
                     await sleep(500);
-
                     editPencils[1].closest('button').click();
                     await sleep(600);
                     sel = await waitFor('select[data-testid="condition-term-options"]');
-                    sel.value = 'every'; trigger(sel);
+                    sel.value = 'every';
+                    trigger(sel);
                     inp = await waitFor('input[data-testid="condition-count-input"]');
-                    inp.value = '1'; trigger(inp);
+                    inp.value = '1';
+                    trigger(inp);
                     sel = await waitFor('select[data-testid="condition-bet-type-options"]');
-                    sel.value = 'win'; trigger(sel);
+                    sel.value = 'win';
+                    trigger(sel);
                     sel = await waitFor('select[data-testid="condition-action-options"]');
-                    sel.value = 'increaseByPercentage'; trigger(sel);
+                    sel.value = 'increaseByPercentage';
+                    trigger(sel);
                     inp = await waitFor('input[data-testid="condition-action-percentage-input"]');
-                    inp.value = win_increase; trigger(inp);
+                    inp.value = win_increase;
+                    trigger(inp);
                     await sleep(500);
-
                     editPencils[2].closest('button').click();
                     await sleep(600);
                     sel = await waitFor('select[data-testid="condition-term-options"]');
                     sel.value = 'everyStreakOf';
                     trigger(sel);
                     inp = await waitFor('input[data-testid="condition-count-input"]');
-                    inp.value = loss_reset; trigger(inp);
+                    inp.value = loss_reset;
+                    trigger(inp);
                     sel = await waitFor('select[data-testid="condition-bet-type-options"]');
-                    sel.value = 'lose'; trigger(sel);
+                    sel.value = 'lose';
+                    trigger(sel);
                     sel = await waitFor('select[data-testid="condition-action-options"]');
-                    sel.value = 'resetAmount'; trigger(sel);
+                    sel.value = 'resetAmount';
+                    trigger(sel);
                     await sleep(500);
-
                     editPencils[3].closest('button').click();
                     await sleep(600);
                     const profitRadio4 = await waitFor('label[data-testid="condition-type-radio-profit"]');
                     profitRadio4.click();
                     await sleep(300);
                     sel = await waitFor('select[data-testid="condition-profit-type"]');
-                    sel.value = 'profit'; trigger(sel);
+                    sel.value = 'profit';
+                    trigger(sel);
                     sel = await waitFor('select[data-testid="condition-profit-term-type-options"]');
-                    sel.value = 'greaterThanOrEqualTo'; trigger(sel);
+                    sel.value = 'greaterThanOrEqualTo';
+                    trigger(sel);
                     inp = await waitFor('input[data-testid="condition-profit-amount-input"]');
-                    inp.value = profit_stop; trigger(inp);
+                    inp.value = profit_stop;
+                    trigger(inp);
                     sel = await waitFor('select[data-testid="condition-action-options"]');
-                    sel.value = 'stop'; trigger(sel);
+                    sel.value = 'stop';
+                    trigger(sel);
                     alert(`SUCCESS! "${multiplier}x" strategy created.\nClick "Save Strategy" when ready.`);
                 } catch (err) {
                     alert('Import failed: ' + err);
@@ -892,7 +860,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             });
-
             console.log('Script loaded');
             const counterContainer = document.createElement('div');
             counterContainer.id = 'draggable-counter';
@@ -910,12 +877,10 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             let target = 10;
             let lossCounter = 0;
             let volume = 1.0;
-
             const counterSpan = document.createElement('span');
             counterSpan.innerText = `${counter}`;
             counterSpan.style.transition = 'transform 0.3s';
             counterContainer.appendChild(counterSpan);
-
             // Controls row
             const controlsDiv = document.createElement('div');
             Object.assign(controlsDiv.style, {
@@ -925,15 +890,12 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 marginTop: '5px'
             });
             counterContainer.appendChild(controlsDiv);
-
             // Add label
             const label = document.createElement('span');
             label.textContent = 'Stop after streak of ';
             label.style.fontSize = '12px';
             label.style.marginRight = '5px';
             controlsDiv.appendChild(label);
-
-
             const targetInput = document.createElement('input');
             targetInput.type = 'number';
             targetInput.min = '0';
@@ -944,7 +906,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             targetInput.style.color = '#FFFFFF';
             targetInput.style.border = '1px solid #162a35';
             controlsDiv.appendChild(targetInput);
-
             const resetButton = document.createElement('button');
             resetButton.innerText = 'Reset';
             resetButton.style.fontSize = '10px';
@@ -958,7 +919,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             resetButton.onmouseover = () => { resetButton.style.backgroundColor = '#30d4b3'; };
             resetButton.onmouseout = () => { resetButton.style.backgroundColor = '#249f87'; };
             controlsDiv.appendChild(resetButton);
-
             const lossDiv = document.createElement('div');
             lossDiv.style.fontSize = '15px';
             lossDiv.style.marginTop = '5px';
@@ -969,7 +929,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             lossSpan.style.transition = 'transform 0.3s, color 0.3s';
             lossDiv.appendChild(lossSpan);
             counterContainer.appendChild(lossDiv);
-
             const volumeDiv = document.createElement('div');
             Object.assign(volumeDiv.style, {
                 display: 'flex',
@@ -991,14 +950,10 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             volumeDiv.appendChild(volumeIcon);
             volumeDiv.appendChild(volumeSlider);
             counterContainer.appendChild(volumeDiv);
-
-
             targetInput.addEventListener('change', () => {
                 target = parseInt(targetInput.value) || 0;
                 console.log(`Target updated to ${target}`);
             });
-
-
             resetButton.addEventListener('click', () => {
                 counter = 0;
                 lossCounter = 0;
@@ -1006,8 +961,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 updateLoss();
                 console.log('Counter manually reset to 0');
             });
-
-
             volumeSlider.addEventListener('input', () => {
                 volume = parseInt(volumeSlider.value) / 100;
                 if (volume === 0) {
@@ -1020,24 +973,19 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     volumeIcon.textContent = '🔊';
                 }
             });
-
             function updateCounter() {
                 counterSpan.innerText = `${counter}`;
             }
-
             function updateLoss() {
                 lossSpan.innerText = `${lossCounter}`;
                 lossSpan.style.color = lossCounter > 0 ? 'red' : 'inherit';
             }
-
             function animateSpan(span) {
                 span.style.transform = 'scale(1.2)';
                 setTimeout(() => { span.style.transform = 'scale(1)'; }, 300);
             }
-
             updateCounter();
             updateLoss();
-
             function playBeep() {
                 if (volume === 0) return;
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1051,7 +999,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                 oscillator.start();
                 setTimeout(() => oscillator.stop(), 200);
             }
-
             function stopAutoplay() {
                 const stopButton = document.querySelector('button[data-testid="auto-bet-button"][data-autobet-status="stop"]');
                 if (stopButton && !stopButton.disabled) {
@@ -1061,10 +1008,8 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     console.log('Stop button not found or disabled');
                 }
             }
-
             let prev3Success = false;
             let lastSeenBetId = null;
-
             function initCounter() {
                 const container = document.querySelector('div[class*="condition-list-wrap"]');
                 const pastBets = document.querySelector('.past-bets');
@@ -1073,40 +1018,30 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     return false; // Not found yet
                 }
                 console.log('Container found');
-
-
                 function checkButton3() {
                     const smallBlocks = container.querySelectorAll('div[class*="small-block"]');
                     let button3Div = null;
-
                     smallBlocks.forEach((div) => {
                         const button = div.querySelector('button');
                         if (button && button.innerText.trim() === '3') {
                             button3Div = div;
                         }
                     });
-
                     if (!button3Div) return;
-
                     const current3Success = button3Div.classList.contains('success');
-
                     if (current3Success && !prev3Success) {
                         counter = 0;
                         updateCounter();
                         console.log('Button 3 success detected, counter reset to 0');
                     }
-
                     prev3Success = current3Success;
                 }
-
-
                 const betObserver = new MutationObserver(() => {
                     const newest = pastBets.querySelector('button[data-last-bet-index="0"]');
                     if (!newest) return;
                     const betId = newest.getAttribute('data-past-bet-id');
                     if (betId === lastSeenBetId) return;
                     lastSeenBetId = betId;
-
                     const isWin = newest.classList.contains('variant-positive');
                     if (isWin) {
                         counter++;
@@ -1124,30 +1059,14 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                         animateSpan(lossSpan);
                     }
                 });
-
-                betObserver.observe(pastBets, {
-                    childList: true,
-                    subtree: true
-                });
-
-
+                betObserver.observe(pastBets, { childList: true, subtree: true });
                 const observer = new MutationObserver(() => {
                     checkButton3();
                 });
-
-                observer.observe(container, {
-                    attributes: true,
-                    attributeFilter: ['class'],
-                    childList: true,
-                    subtree: true
-                });
-
-
+                observer.observe(container, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
                 checkButton3();
-
                 return true;
             }
-
             if (!initCounter()) {
                 const pollInterval = setInterval(() => {
                     if (initCounter()) {
@@ -1155,7 +1074,6 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     }
                 }, 100);
             }
-
             gui.prepend(counterContainer);
             gui.appendChild(title);
             document.body.appendChild(gui);
