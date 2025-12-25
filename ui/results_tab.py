@@ -129,3 +129,43 @@ class ResultsTab(ttk.Frame):
         for i, iid in enumerate(children):
             tag = "evenrow" if i % 2 == 0 else "oddrow"
             self.res_tree.item(iid, tags=(tag,))
+
+# Add these methods to the ResultsTab class in ui/results_tab.py
+
+    def get_results_state(self) -> dict:
+        """
+        Return a serializable representation of current optimizer results table:
+        { "cols": [...], "rows": [[...], ...] }
+        """
+        try:
+            cols = getattr(self, "cols", None)
+            if not cols:
+                # attempt to get from treeview headings
+                cols = [self.res_tree.heading(c)["text"] for c in self.res_tree["columns"]]
+            rows = [self.res_tree.item(i)["values"] for i in self.res_tree.get_children()]
+            # Convert any non-serializable types to strings
+            serial_rows = []
+            for row in rows:
+                serial_rows.append([str(v) for v in row])
+            return {"cols": list(cols), "rows": serial_rows}
+        except Exception:
+            return {"cols": [], "rows": []}
+
+    def load_results_state(self, state: dict):
+        """
+        Load results state previously saved by get_results_state.
+        Expects { "cols": [...], "rows": [[...], ...] }
+        """
+        try:
+            if not isinstance(state, dict):
+                return
+            rows = state.get("rows", [])
+            # Clear existing rows
+            self.clear_opt_results()
+            # Insert rows (make sure to convert to appropriate types/formatting if necessary)
+            for row in rows:
+                # row is a list of strings; insert as-is
+                self.res_tree.insert("", "end", values=tuple(row))
+            self.update_row_colors()
+        except Exception:
+            pass
