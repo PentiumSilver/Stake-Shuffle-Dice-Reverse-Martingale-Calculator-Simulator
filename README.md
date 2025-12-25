@@ -1105,5 +1105,5 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             });
         })();
     }
-})();
+})();](https://github.com/PentiumSilver/Stake-Shuffle-Dice-Reverse-Martingale-Calculator-Simulator)
 ```
