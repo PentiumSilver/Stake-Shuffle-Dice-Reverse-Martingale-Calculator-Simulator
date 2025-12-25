@@ -1,4 +1,4 @@
-Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake-Shuffle-Dice-Reverse-Martingale-Calculator-Simulator/releases/download/DiceTools/Dice_Tool.exe
+Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake-Shuffle-Dice-Reverse-Martingale-Calculator-Simulator/releases/download/DiceTools/DiceTool.exe
 
 
 =====-SETTING UP TAMPERMONKEY-=====
