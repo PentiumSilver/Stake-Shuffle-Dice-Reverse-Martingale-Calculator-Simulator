@@ -648,56 +648,44 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
                     }
                 });
             }
-            function updateExistingStrategy() {
-                getValuesFromServer(function(values) {
-                    const betSize = values.bet_size;
-                    const profitStop = values.profit_stop;
+            async function updateExistingStrategy() {
+                try {
+                    const v = await getValues();
+                    const betSize = v.bet_size;
+                    const profitStop = v.profit_stop;
+
                     if (!betSize || !profitStop) {
                         alert('Missing bet_size or profit_stop.');
                         return;
                     }
-                    const editButton = document.querySelector('button[data-testid="edit-strategy-button"]');
-                    if (!editButton) {
-                        alert('Edit Strategy button not found.');
-                        return;
+
+                    // === Set main bet amount ===
+                    const betInput = await waitFor('input[data-testid="input-game-amount"]');
+                    betInput.value = betSize;
+                    trigger(betInput);
+
+                    // === Open Condition 4 ===
+                    const cond4BlockBtn = await waitFor('button[data-testid="block-condition-4"]');
+                    cond4BlockBtn.click();
+                    await sleep(600);
+
+                    // === Click edit pencil if present ===
+                    const editBtn = document.querySelector('button[data-testid="conditional-block-edit-condition-4"]');
+                    if (editBtn) {
+                        editBtn.click();
+                        await sleep(600);
                     }
-                    editButton.click();
-                    setTimeout(() => {
-                        const editBtns = document.querySelectorAll('button[data-testid="conditional-block-edit"]');
-                        if (editBtns.length < 4) {
-                            alert('Not enough edit buttons found for conditions.');
-                            return;
-                        }
-                        const cond4Btn = editBtns[3];
-                        const cond4Container = cond4Btn.closest('[data-testid="conditional-block"]');
-                        if (!cond4Container) {
-                            alert('Condition 4 container not found.');
-                            return;
-                        }
-                        let profitInput = cond4Container.querySelector('input[data-testid="condition-profit-amount-input"]');
-                        if (profitInput) {
-                            profitInput.value = profitStop;
-                            trigger(profitInput);
-                        } else {
-                            cond4Btn.click();
-                            setTimeout(() => {
-                                profitInput = cond4Container.querySelector('input[data-testid="condition-profit-amount-input"]');
-                                if (profitInput) {
-                                    profitInput.value = profitStop;
-                                    trigger(profitInput);
-                                } else {
-                                    alert('Profit input not found after editing condition 4.');
-                                }
-                            }, 600);
-                        }
-                        const betInput = document.querySelector('input[data-testid="input-game-amount"]');
-                        if (betInput) {
-                            betInput.value = betSize;
-                            trigger(betInput);
-                        }
-                        alert('Existing strategy updated with new bet size and profit stop.');
-                    }, 1000);
-                });
+
+                    // === Set profit stop amount ===
+                    const profitInput = await waitFor('input[data-testid="condition-profit-amount-input"]');
+                    profitInput.value = profitStop;
+                    trigger(profitInput);
+
+                    alert('Existing strategy updated (bet size + profit stop).');
+                } catch (err) {
+                    alert('Update failed: ' + err);
+                    console.error(err);
+                }
             }
             async function importNewStrategy() {
                 try {
