@@ -617,11 +617,26 @@ Download the executable (.exe) here: ---> https://github.com/PentiumSilver/Stake
             };
             // ── Export Balance ─────────────────────
             async function exportBalance() {
-                const el = document.querySelector('span.ds-body-md-strong[data-ds-text="true"][style*="max-width: 16ch"]') || document.querySelector('span.ds-body-md-strong[data-ds-text="true"]');
+                const el = document.querySelector('span.ds-body-md-strong[data-ds-text="true"][style*="max-width: 16ch"]') ||
+                      document.querySelector('span.ds-body-md-strong[data-ds-text="true"]');
                 if (!el) return alert('Balance element not found');
-                const balanceText = el.textContent.trim().replace(/,/g, '');
-                const balance = parseFloat(balanceText);
-                if (isNaN(balance)) return alert('Invalid balance format');
+
+                const rawText = el.textContent.trim();
+
+                // Remove commas and everything except digits and decimal points
+                let cleaned = rawText.replace(/,/g, '').replace(/[^\d.]/g, '');
+
+                // Protect against multiple decimal points (malformed input)
+                const parts = cleaned.split('.');
+                if (parts.length > 2) {
+                    cleaned = parts.shift() + '.' + parts.join('');
+                }
+
+                const balance = parseFloat(cleaned);
+                if (isNaN(balance)) {
+                    return alert('Invalid balance format after cleaning: ' + rawText);
+                }
+
                 GM_xmlhttpRequest({
                     method: "POST",
                     url: "http://localhost:8000/set_balance",
